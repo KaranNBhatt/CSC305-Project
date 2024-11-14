@@ -9,4 +9,9 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+router.post('/homepage', (req, res, next) => {
+  const {userID, role} = req.body;
+  res.render('homepage', {userID, role});
+})
+
 module.exports = router;
