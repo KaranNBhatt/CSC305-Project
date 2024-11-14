@@ -1,9 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * Module dependencies.
- */
-
 var app = require('../app');
 var debug = require('debug')('csc325:server');
 var http = require('http');
@@ -14,6 +10,17 @@ var http = require('http');
 
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
+
+// Database
+var sqlite3 = require('sqlite3');
+let dbname = 'public/univdb.sqli';
+app.locals.db = dbconnect.dbopen(dbname);
+if (!app.locals.db) {
+  console.log('Could not connect to' + ' ' +dbname);
+}
+else {
+  console.log('Connected' + ' ' + dbname);
+}
 
 /**
  * Create HTTP server.
@@ -88,3 +95,36 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+
+/**
+ * Function for graceful (as much as possible!) shutdown.
+ */
+function gracefulShutdown(signal) {
+  if (signal) {
+      console.log(`Received ${signal}, shutting down (somewhat) gracefully.`);
+  }
+  else {
+      console.log('Shutting down, no signal.');
+  }
+
+  server.close(() => {
+      console.log('Http server closed.');
+      if (app.locals.db) {
+          dbconnect.dbclose(app.locals.db, () => { 
+              console.log('Exiting after closing database.');
+              process.exit(0); 
+          });
+      }
+      else {
+          console.log('Exiting, no database to close.')
+          process.exit(0);
+      }
+  });
+}
+
+/**
+* Attach gracefulShutdown() to the two most common ways of shutting down.
+*/
+process.on('SIGTERM', gracefulShutdown);
+
+process.on('SIGINT', gracefulShutdown);
