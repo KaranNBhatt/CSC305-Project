@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var app = require('../app');
+var path = require('path');
 var debug = require('debug')('csc325:server');
 var http = require('http');
 
@@ -12,15 +13,9 @@ var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
 // Database
-var sqlite3 = require('sqlite3');
-let dbname = 'public/univdb.sqli';
+const dbconnect = require('../public/javascripts/dbconnect');
+let dbname = path.resolve(__dirname, '..', 'public', 'univdb.sqli');
 app.locals.db = dbconnect.dbopen(dbname);
-if (!app.locals.db) {
-  console.log('Could not connect to' + ' ' +dbname);
-}
-else {
-  console.log('Connected' + ' ' + dbname);
-}
 
 /**
  * Create HTTP server.
