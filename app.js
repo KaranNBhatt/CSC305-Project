@@ -7,18 +7,8 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
-var app = express();
 
-// Database
-var sqlite3 = require('sqlite3');
-let dbname = 'public/univdb.sqli'
-app.locals.db = new sqlite3.Database('public/univdb.sqli');
-if (!app.locals.db) {
-  console.log('Could not connect to' + ' ' +dbname);
-}
-else {
-  console.log('Connected' + ' ' + dbname);
-}
+var app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -32,6 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use(express.urlencoded({ extended: true }));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -48,5 +39,7 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+
 
 module.exports = app;

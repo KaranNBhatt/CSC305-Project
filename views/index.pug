@@ -1,5 +1,21 @@
-extends layout
+doctype html
+html
+  head
+    title Role Selection Form
+    link(rel='stylesheet', href='/stylesheets/index.css')
+    script(type='routes/index.js')
 
-block content
-  h1= title
-  p Welcome to #{title}
+  body
+    .form-container
+      h2 User Role Selection
+      form(action="/homepage" method="POST")#userForm
+        .form-group
+          label(for="userID") User ID:
+          input(type="text" id="userID" name="userID" required)
+        .form-group
+          label(for="role") Role:
+          select(id="role" name="role" required)
+            option(value="student") Student
+            option(value="faculty") Faculty
+            option(value="registrar") Registrar
+        button(type="submit") Submit
