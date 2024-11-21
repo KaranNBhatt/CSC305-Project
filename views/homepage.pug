@@ -2,9 +2,20 @@ doctype html
 html
     head
         title= Title
-        link(rel='stylesheet', href='/stylesheets/index.css')
-
+        link(rel='stylesheet', href='/stylesheets/index.css') 
     body
-        p(style='white-space:pre;') 
-            |   Username: #{userID} 
-            |   Role: #{role}
+        h1 #{role}: #{userID}
+
+        if !courses
+            p No Result for #{userID}
+        else if courses.length > 0
+            table
+                thead
+                    tr
+                        each key in Object.keys(courses[0])
+                            th= key
+                tbody 
+                    each course in courses
+                        tr
+                            each val in Object.values(course)
+                                td= val
