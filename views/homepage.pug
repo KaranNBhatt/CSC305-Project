@@ -4,12 +4,12 @@ html
         title= Title
         link(rel='stylesheet', href='/stylesheets/index.css') 
     body
-        h1 #{role}: #{userID}
-
+        h3#resultHeader #{role}: #{userID}
+        
         if !courses
             p No Result for #{userID}
         else if courses.length > 0
-            table
+            table(class='resultTable')
                 thead
                     tr
                         each key in Object.keys(courses[0])
