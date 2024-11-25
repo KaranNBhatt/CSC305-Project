@@ -1,9 +1,8 @@
 doctype html
 html
   head
-    title Role Selection Form
+    title= title
     link(rel='stylesheet', href='/stylesheets/index.css')
-    script(type='routes/index.js')
 
   body
     .form-container
@@ -14,8 +13,23 @@ html
           input(type="text" id="userID" name="userID" required)
         .form-group
           label(for="role") Role:
-          select(id="role" name="role" required)
+          select(id="role" name="role" required onchange="toggleUserID()")
             option(value="student") Student
             option(value="faculty") Faculty
             option(value="registrar") Registrar
         button(type="submit") Submit
+
+    script.
+      function toggleUserID() {
+        const role = document.getElementById('role').value;
+        const userIDField = document.getElementById('userID');
+
+        if (role === 'registrar') {
+          userIDField.value = ''; // Clear any input
+          userIDField.setAttribute('disabled', 'disabled');
+          userIDField.removeAttribute('required');
+        } else {
+          userIDField.removeAttribute('disabled');
+          userIDField.setAttribute('required', 'required');
+        }
+      }
