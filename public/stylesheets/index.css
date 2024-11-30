@@ -83,3 +83,10 @@ tr:hover {
     left: 0; /* Align to the left */
     margin: 0; /* Remove default margins */
 }
+
+#add-form {
+  position: absolute; /* Position it relative to the nearest positioned ancestor */
+  bottom: 0; /* Align to the bottom */
+  left: 0; /* Align to the left */
+  margin: 0; /* Remove default margins */
+}

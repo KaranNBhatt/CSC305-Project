@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+router.use(express.json());
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -9,10 +10,55 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Role Selection Form' });
 });
 
+router.get('/homepage', function(req, res, next) {
+  showHomepage(req, res, next);
+});
+
 router.post('/homepage', function(req, res, next) {
   clearReqAppLocals(req);
   req.app.locals.formdata = req.body;
   topLevel(req, res, next, req.body);
+});
+
+router.post('/delete-enrollment', function(req, res, next) {
+  const { StdSSN, OfferNo } = req.body;
+  if (req.app.locals.db) {
+    const deleteQuery = "DELETE FROM Enrollment WHERE StdSSN = ? AND OfferNo = ?";
+    req.app.locals.db.run(deleteQuery, [StdSSN, OfferNo], function(err) {
+      if (err) {
+        console.error(err.message);
+        res.status(500).send('Error deleting enrollment');
+        return;
+      }
+      console.log(`Deleted enrollment: StdSSN=${StdSSN}, OfferNo=${OfferNo}`);
+      StdQuery(req, res, next);
+    });
+  } else {
+    res.status(500).send('Database not connected');
+  }
+});
+
+router.post('/add-enrollment', function(req, res, next) {
+  const { OfferNo, StdSSN } = req.body;
+  if (req.app.locals.db) {
+    const insertQuery = "INSERT INTO Enrollment (OfferNo, StdSSN) VALUES (?, ?)";
+    req.app.locals.db.run(insertQuery, [OfferNo, StdSSN], function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          console.error('Duplicate enrollment attempt.');
+          res.status(400).send('Already enrolled in this course.');
+        } else {
+          console.error(err.message);
+          res.status(500).send('Error adding enrollment');
+        }
+        return;
+      }
+      console.log(`Added enrollment: StdSSN=${StdSSN}, OfferNo=${OfferNo}`);
+      StdQuery(req, res, next); // Redirect to refresh the homepage with updated data
+    });
+  } else {
+    res.status(500).send('Database not connected');
+  }
 });
 
 function topLevel(req, res, next) {
@@ -51,15 +97,6 @@ function topLevel(req, res, next) {
   }
 }
 
-function clearReqAppLocals(req) {
-  req.app.locals.query = '';
-  req.app.locals.rows = [];
-  req.app.locals.userID = '';
-  req.app.locals.paramQuery = '';
-  req.app.locals.courses = [];
-  req.app.locals.formdata = {};
-}
-
 function FacQuery(req, res, next) {
   if (req.app.locals.formdata && req.app.locals.formdata.userID) {
     // Not Normalized because DB doesn't use dashes for Faculty
@@ -68,9 +105,11 @@ function FacQuery(req, res, next) {
     
     let paramQuery = "SELECT * FROM Offering WHERE FacSSN = ?"
     req.app.locals.db.all(paramQuery, [querySSN], (err, rows) => {
+      if (err) {
+        throw err;
+      }
       req.app.locals.paramQuery = paramQuery
       req.app.locals.courses = rows;
-      console.log(req.app.locals.courses)
       showHomepage(req, res, next);
     });
   }
@@ -91,7 +130,9 @@ function StdQuery(req, res, next) {
                       + `JOIN Offering o ON e.OfferNo = o.OfferNo `
                       + `WHERE s.StdSSN = ?`
     req.app.locals.db.all(paramQuery, [querySSN], (err, rows) => {
-      req.app.locals.paramQuery = paramQuery
+      if (err) {
+        throw err;
+      }
       req.app.locals.courses = rows;
       showHomepage(req, res, next);
     });
@@ -99,6 +140,15 @@ function StdQuery(req, res, next) {
   else {
     showHomepage(req, res, next);
   }
+}
+
+function clearReqAppLocals(req) {
+  req.app.locals.query = '';
+  req.app.locals.rows = [];
+  req.app.locals.userID = '';
+  req.app.locals.paramQuery = '';
+  req.app.locals.courses = [];
+  req.app.locals.formdata = {};
 }
 
 function SSN_with_dashes(ssn) {
