@@ -1,21 +1,51 @@
-doctype html
 html
     head
         title= Title
-        link(rel='stylesheet', href='/stylesheets/index.css') 
+        link(rel='stylesheet', href='/stylesheets/index.css')  
     body
-        h1 #{role}: #{userID}
-
-        if !courses
-            p No Result for #{userID}
-        else if courses.length > 0
-            table
-                thead
-                    tr
-                        each key in Object.keys(courses[0])
-                            th= key
-                tbody 
-                    each course in courses
+        if role ==='faculty' || role ==='student'
+            h3#resultHeader #{role}: #{userID}
+        else
+            h3#resultHeader #{role}
+        
+        if role ==='faculty' || role ==='registrar'
+            if courses.length === 0
+                p No Result for: #{userID} || Faculty ID not in Database
+            else if courses.length > 0
+                table(class='resultTable')
+                    thead
                         tr
-                            each val in Object.values(course)
-                                td= val
+                            each key in Object.keys(courses[0])
+                                th= key
+                    tbody 
+                        each course in courses
+                            tr
+                                each val in Object.values(course)
+                                    td= val
+        else if role === 'student'
+            if courses === 0
+                p No Result for: #{userID} || Student ID not in Database
+            else if courses.length > 0
+                table.resultTable(data-userID=userID)
+                    thead
+                        tr
+                            each key in Object.keys(courses[0])
+                                th= key
+                            th Remove Course
+                    tbody 
+                        each course in courses
+                            tr
+                                each val in Object.values(course)
+                                    td= val
+
+                                td
+                                    form#delete-form(method="POST", action="/delete-enrollment")
+                                        input(type="hidden", name="StdSSN", value=userID)
+                                        input(type="hidden", name="OfferNo", value=course.OfferNo)
+                                        button(type="submit") Delete
+                
+            form#add-form(method="POST", action="/add-enrollment")
+                label(for="offerNo") Course OfferNo:
+                input(type="text", name="OfferNo", required)
+                input(type="hidden", name="StdSSN", value=userID)
+                button(type="submit") Add Course

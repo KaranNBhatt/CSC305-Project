@@ -51,3 +51,42 @@ button {
 button:hover {
     background-color: #45a049;
 }
+
+table {
+  width: 100%; /* Make table fill the container */
+  border-collapse: collapse; /* Remove gaps between cells */
+}
+
+th, td {
+  border: 1px solid #ddd; /* Add a border around cells */
+  padding: 8px; /* Add padding for readability */
+  text-align: left; /* Align text to the left */
+}
+
+th {
+  background-color: #f4f4f4; /* Light gray background for header */
+  font-weight: bold; /* Bold text for headers */
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9; /* Zebra-striping for even rows */
+}
+
+tr:hover {
+  background-color: #808080; /* Highlight row on hover */
+}
+
+
+#resultHeader {
+    position: absolute; /* Position it relative to the nearest positioned ancestor */
+    top: 0; /* Align to the top */
+    left: 0; /* Align to the left */
+    margin: 0; /* Remove default margins */
+}
+
+#add-form {
+  position: absolute; /* Position it relative to the nearest positioned ancestor */
+  bottom: 0; /* Align to the bottom */
+  left: 0; /* Align to the left */
+  margin: 0; /* Remove default margins */
+}

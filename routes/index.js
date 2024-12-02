@@ -1,24 +1,68 @@
 var express = require('express');
 var router = express.Router();
+router.use(express.json());
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   if (req.app.locals.db) {
     console.log('Got the database');
   }
-  res.render('index', { title: 'Express' });
+  res.render('index', { title: 'Role Selection Form' });
+});
+
+router.get('/homepage', function(req, res, next) {
+  showHomepage(req, res, next);
 });
 
 router.post('/homepage', function(req, res, next) {
   clearReqAppLocals(req);
   req.app.locals.formdata = req.body;
-  console.log(req.app.locals.formdata.role);
   topLevel(req, res, next, req.body);
+});
+
+router.post('/delete-enrollment', function(req, res, next) {
+  const { StdSSN, OfferNo } = req.body;
+  if (req.app.locals.db) {
+    const deleteQuery = "DELETE FROM Enrollment WHERE StdSSN = ? AND OfferNo = ?";
+    req.app.locals.db.run(deleteQuery, [StdSSN, OfferNo], function(err) {
+      if (err) {
+        console.error(err.message);
+        res.status(500).send('Error deleting enrollment');
+        return;
+      }
+      console.log(`Deleted enrollment: StdSSN=${StdSSN}, OfferNo=${OfferNo}`);
+      StdQuery(req, res, next);
+    });
+  } else {
+    res.status(500).send('Database not connected');
+  }
+});
+
+router.post('/add-enrollment', function(req, res, next) {
+  const { OfferNo, StdSSN } = req.body;
+  if (req.app.locals.db) {
+    const insertQuery = "INSERT INTO Enrollment (OfferNo, StdSSN) VALUES (?, ?)";
+    req.app.locals.db.run(insertQuery, [OfferNo, StdSSN], function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          console.error('Duplicate enrollment attempt.');
+          res.status(400).send('Already enrolled in this course.');
+        } else {
+          console.error(err.message);
+          res.status(500).send('Error adding enrollment');
+        }
+        return;
+      }
+      console.log(`Added enrollment: StdSSN=${StdSSN}, OfferNo=${OfferNo}`);
+      StdQuery(req, res, next); // Redirect to refresh the homepage with updated data
+    });
+  } else {
+    res.status(500).send('Database not connected');
+  }
 });
 
 function topLevel(req, res, next) {
   if (req.app.locals.formdata.role === 'faculty') {
-    console.log('Form data: ' + JSON.stringify(req.app.locals.formdata));
     req.app.locals.query = "SELECT * FROM Faculty;";
     req.app.locals.db.all(req.app.locals.query, [], (err, rows) => {
       if (err) {
@@ -38,30 +82,34 @@ function topLevel(req, res, next) {
       StdQuery(req, res, next);
     });
   }
+  else if (req.app.locals.formdata.role === 'registrar') {
+    req.app.locals.query = "SELECT * FROM Offering;";
+    req.app.locals.db.all(req.app.locals.query, [], (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      req.app.locals.courses = rows;
+      showHomepage(req, res, next);
+    });
+  }
   else {
     showHomepage(req, res, next);
   }
 }
 
-function clearReqAppLocals(req) {
-  req.app.locals.query = '';
-  req.app.locals.rows = [];
-  req.app.locals.userID = '';
-  req.app.locals.paramQuery = '';
-  req.app.locals.courses = [];
-  req.app.locals.formdata = {};
-}
-
 function FacQuery(req, res, next) {
   if (req.app.locals.formdata && req.app.locals.formdata.userID) {
     // Not Normalized because DB doesn't use dashes for Faculty
+    req.app.locals.userID = SSN_with_dashes(req.app.locals.formdata.userID);
     let querySSN = req.app.locals.formdata.userID
     
     let paramQuery = "SELECT * FROM Offering WHERE FacSSN = ?"
     req.app.locals.db.all(paramQuery, [querySSN], (err, rows) => {
+      if (err) {
+        throw err;
+      }
       req.app.locals.paramQuery = paramQuery
       req.app.locals.courses = rows;
-
       showHomepage(req, res, next);
     });
   }
@@ -76,10 +124,15 @@ function StdQuery(req, res, next) {
     req.app.locals.userID = SSN_with_dashes(req.app.locals.formdata.userID);
     let querySSN = req.app.locals.userID;
     
-    let paramQuery = "SELECT * FROM Enrollment WHERE StdSSN = ?"
-    console.log(paramQuery);
+    let paramQuery = `SELECT o.* `
+                      + `FROM Student s `
+                      + `JOIN Enrollment e ON s.StdSSN = e.StdSSN `
+                      + `JOIN Offering o ON e.OfferNo = o.OfferNo `
+                      + `WHERE s.StdSSN = ?`
     req.app.locals.db.all(paramQuery, [querySSN], (err, rows) => {
-      req.app.locals.paramQuery = paramQuery
+      if (err) {
+        throw err;
+      }
       req.app.locals.courses = rows;
       showHomepage(req, res, next);
     });
@@ -87,6 +140,15 @@ function StdQuery(req, res, next) {
   else {
     showHomepage(req, res, next);
   }
+}
+
+function clearReqAppLocals(req) {
+  req.app.locals.query = '';
+  req.app.locals.rows = [];
+  req.app.locals.userID = '';
+  req.app.locals.paramQuery = '';
+  req.app.locals.courses = [];
+  req.app.locals.formdata = {};
 }
 
 function SSN_with_dashes(ssn) {
@@ -103,7 +165,7 @@ function showHomepage(req, res, next) {
   res.render('homepage', { title: 'Homepage',
                           rows: req.app.locals.rows,
                           courses: req.app.locals.courses,
-                          userID: req.app.locals.formdata.userID,
+                          userID: req.app.locals.userID,
                           role: req.app.locals.formdata.role,
                           formdata: req.app.locals.formdata,
   })
