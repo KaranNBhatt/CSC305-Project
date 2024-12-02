@@ -31,7 +31,7 @@ router.post('/delete-enrollment', function(req, res, next) {
         return;
       }
       console.log(`Deleted enrollment: StdSSN=${StdSSN}, OfferNo=${OfferNo}`);
-      StdQuery(req, res, next);
+      StdQuery(req, res, next); // Redirect to refresh the homepage with updated data
     });
   } else {
     res.status(500).send('Database not connected');
@@ -103,7 +103,7 @@ function FacQuery(req, res, next) {
     req.app.locals.userID = SSN_with_dashes(req.app.locals.formdata.userID);
     let querySSN = req.app.locals.formdata.userID
     
-    let paramQuery = "SELECT * FROM Offering WHERE FacSSN = ?"
+    let paramQuery = "SELECT CourseNo, OffTerm, OffYear FROM Offering WHERE FacSSN = ?"
     req.app.locals.db.all(paramQuery, [querySSN], (err, rows) => {
       if (err) {
         throw err;
@@ -124,10 +124,11 @@ function StdQuery(req, res, next) {
     req.app.locals.userID = SSN_with_dashes(req.app.locals.formdata.userID);
     let querySSN = req.app.locals.userID;
     
-    let paramQuery = `SELECT o.* `
+    let paramQuery = `SELECT o.CourseNo, o.OffTerm, o.OffYear, e.EnrGrade, f.FacFirstName, f.FacLastName `
                       + `FROM Student s `
                       + `JOIN Enrollment e ON s.StdSSN = e.StdSSN `
                       + `JOIN Offering o ON e.OfferNo = o.OfferNo `
+                      + `JOIN Faculty f ON o.FacSSN = f.FacSSN `
                       + `WHERE s.StdSSN = ?`
     req.app.locals.db.all(paramQuery, [querySSN], (err, rows) => {
       if (err) {
