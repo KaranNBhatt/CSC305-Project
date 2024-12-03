@@ -1,0 +1,28 @@
+html
+    head
+        title=title
+        link(rel='stylesheet', href='/stylesheets/index.css')  
+    
+    body
+        h3#resultHeader Add Course
+    
+        table(class='resultTable')
+                    thead
+                        tr
+                            each key in Object.keys(courses[0])
+                                if key !== "OfferNo"
+                                    th= key
+                            
+                            th Add Course
+                    tbody 
+                        each course in courses
+                            tr
+                                each val in Object.values(course)
+                                    if val !== course.OfferNo
+                                        td= val
+                                
+                                td
+                                    form(method="POST", action="/add-enrollment")
+                                        input(type="hidden", name="StdSSN", value=userID)
+                                        input(type="hidden", name="OfferNo", value=course.OfferNo)
+                                        button(type="submit") Add Course       

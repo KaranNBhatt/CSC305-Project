@@ -10,6 +10,7 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Role Selection Form' });
 });
 
+/* Establishing Route to Homepage for Delete and Add refresh */
 router.get('/homepage', function(req, res, next) {
   showHomepage(req, res, next);
 });
@@ -20,6 +21,16 @@ router.post('/homepage', function(req, res, next) {
   topLevel(req, res, next, req.body);
 });
 
+router.post('/student-add', function(req, res, next) {
+  if (req.app.locals.db) {
+    AddQuery(req, res, next); // Get Winter Courses
+  }
+  else {
+    showHomepage(req, res, next);
+  }
+})
+
+/* Student Delete Course Logic */
 router.post('/delete-enrollment', function(req, res, next) {
   const { StdSSN, OfferNo } = req.body;
   if (req.app.locals.db) {
@@ -61,6 +72,8 @@ router.post('/add-enrollment', function(req, res, next) {
   }
 });
 
+
+/* Top Level Query */
 function topLevel(req, res, next) {
   if (req.app.locals.formdata.role === 'faculty') {
     req.app.locals.query = "SELECT * FROM Faculty;";
@@ -83,20 +96,18 @@ function topLevel(req, res, next) {
     });
   }
   else if (req.app.locals.formdata.role === 'registrar') {
-    req.app.locals.query = "SELECT * FROM Offering;";
+    req.app.locals.query = "SELECT * FROM Offering";
     req.app.locals.db.all(req.app.locals.query, [], (err, rows) => {
       if (err) {
         throw err;
       }
       req.app.locals.courses = rows;
-      showHomepage(req, res, next);
+      RegQuery(req, res, next);
     });
-  }
-  else {
-    showHomepage(req, res, next);
   }
 }
 
+/* Faculty Homepage Query */
 function FacQuery(req, res, next) {
   if (req.app.locals.formdata && req.app.locals.formdata.userID) {
     // Not Normalized because DB doesn't use dashes for Faculty
@@ -118,24 +129,66 @@ function FacQuery(req, res, next) {
   }
 }
 
+/* Student Homepage Query */
 function StdQuery(req, res, next) {
   if (req.app.locals.formdata && req.app.locals.formdata.userID) {
     // Normalize the SSN to have Dashes since in DB Student does
     req.app.locals.userID = SSN_with_dashes(req.app.locals.formdata.userID);
     let querySSN = req.app.locals.userID;
     
-    let paramQuery = `SELECT o.CourseNo, o.OffTerm, o.OffYear, e.EnrGrade, f.FacFirstName, f.FacLastName `
-                      + `FROM Student s `
-                      + `JOIN Enrollment e ON s.StdSSN = e.StdSSN `
+    let paramQuery = `SELECT o.offerNo, o.CourseNo, o.OffTerm, o.OffYear, e.EnrGrade,  FacFirstName || ' ' || FacLastName as ProfessorName `
+                      + `FROM Enrollment e `
                       + `JOIN Offering o ON e.OfferNo = o.OfferNo `
-                      + `JOIN Faculty f ON o.FacSSN = f.FacSSN `
-                      + `WHERE s.StdSSN = ?`
+                      + `LEFT JOIN Faculty f ON o.FacSSN = f.FacSSN `
+                      + `WHERE StdSSN = ?`
     req.app.locals.db.all(paramQuery, [querySSN], (err, rows) => {
       if (err) {
         throw err;
       }
       req.app.locals.courses = rows;
       showHomepage(req, res, next);
+    });
+  }
+  else {
+    showHomepage(req, res, next);
+  }
+}
+
+/* Registrar Query */
+function RegQuery(req, res, next) {
+  if (req.app.locals.formdata) {
+    let paramQuery = `SELECT OfferNo, CourseNo, FacFirstName || ' ' || FacLastName as ProfessorName, OffLocation, OffTime, OffDays `
+                    + `FROM Offering o `
+                    + `LEFT JOIN Faculty f ON o.FacSSN = f.FacSSN `
+                    + `WHERE OffTerm = "WINTER"`
+    req.app.locals.db.all(paramQuery, [], (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      req.app.locals.courses = rows;
+      
+      showHomepage(req, res, next);
+    });
+  }
+  else {
+    showHomepage(req, res, next);
+  }
+}
+
+/* Student Add Query */
+function AddQuery(req, res, next) {
+  if (req.app.locals.formdata) {
+    let paramQuery = `SELECT OfferNo, CourseNo, FacFirstName || ' ' || FacLastName as ProfessorName, OffLocation, OffTime, OffDays ` 
+                    + `FROM Offering o ` 
+                    + `LEFT JOIN Faculty f ON o.FacSSN = f.FacSSN ` 
+                    + `WHERE OffTerm = "WINTER"`
+    req.app.locals.db.all(paramQuery, [], (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      req.app.locals.courses = rows;
+
+      showStudentAdd(req, res, next);
     });
   }
   else {
@@ -172,4 +225,14 @@ function showHomepage(req, res, next) {
   })
 }
 
+function showStudentAdd(req, res, next) {
+  res.render('student-add', { title: 'Add Course',
+    rows: req.app.locals.rows,
+    courses: req.app.locals.courses,
+    userID: req.app.locals.userID,
+    role: req.app.locals.formdata.role,
+    formdata: req.app.locals.formdata,
+})
+}
+ 
 module.exports = router;
