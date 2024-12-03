@@ -108,7 +108,7 @@ When a user selects the **Registrar** role:
 
 ---
 
-## Completion Requirements (Part 4)
+## Completion Requirements
 By the project's deadline, the following functionality must be implemented:
 - Faculty must be able to **edit grades**.
 - The registrar must be able to **add, edit, and cancel offerings**.
