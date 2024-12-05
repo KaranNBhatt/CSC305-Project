@@ -29,9 +29,20 @@ html
                                         input(type="hidden", name="StdSSN", value=course.StdSSN)
                                         input(type="number", name="EnrGrade", value=course.EnrGrade, step=".01", min="0", max="5" required)
                                         button(type="submit") Save
-    script.
+    script.                       
         document.querySelectorAll('.edit-button').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
+                // Close any open edit forms
+                document.querySelectorAll('.edit-container').forEach(container => {
+                    const editForm = container.querySelector('.edit-form');
+                    const editButton = container.querySelector('.edit-button');
+                    if (editForm && editForm.style.display === 'block') {
+                        editForm.style.display = 'none'; // Hide the edit form
+                        editButton.style.display = 'block'; // Show the Edit button
+                    }
+                });
+
+                // Open the clicked row's edit form
                 const editContainer = this.closest('.edit-container');
                 this.style.display = 'none'; // Hide the Edit button
                 editContainer.querySelector('.edit-form').style.display = 'block'; // Show the Save form
