@@ -63,10 +63,40 @@ html
                 thead
                     tr
                         each key in Object.keys(courses[0])
-                            th= key
+                            if key !== "FacSSN"
+                                th= key
+
+                        th Edit Offer
                     tbody 
                         each course in courses
                             tr
                                 each val in Object.values(course)
-                                    td= val
+                                    if val !== course.FacSSN
+                                        td= val
+                                
+                                td
+                                    .edit-container
+                                        button.edit-button(type="button") Edit
+                                        form.edit-form(method="POST", action="/registrar-edit", style="display: none")
+                                            input(type="hidden", name="OfferNo", value=course.OfferNo)
+                                            input(type="hidden", name="CourseNo", value=course.CourseNo)
+                                            input(type="text", name="OffLocation", value=course.OffLocation, required)
+                                            input(type="time", name="OffTime", value=course.OffTime, min="08:00", max="17:00", required)
+                                            input(type="text", name="OffDays", value=course.OffDays, required)
+                                            select(name="FacSSN")
+                                                option(value="" selected!=course.FacSSN)
+                                                each professor in professors
+                                                    option(value=professor.FacSSN selected=(professor.FacSSN === course.FacSSN))= professor.ProfessorName
+                                            button(type="submit") Save
+        form#addForm(method="POST", action="/registrar-add")
+            button(type="submit") Add Offering
+                                
+        script.
+            document.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const editContainer = this.closest('.edit-container');
+                    this.style.display = 'none'; // Hide the Edit button
+                    editContainer.querySelector('.edit-form').style.display = 'block'; // Show the Save form
+                });
+            });
 

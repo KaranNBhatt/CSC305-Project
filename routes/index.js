@@ -61,7 +61,7 @@ router.post('/delete-enrollment', function(req, res, next) {
       }
       console.log(`Deleted enrollment: StdSSN=${StdSSN}, OfferNo=${OfferNo}`);
 
-      StdQuery(req, res, next); // Redirect to refresh the homepage with updated data
+      StdQuery(req, res, next); // Query the Student Query again to Refresh the Page Correctly
     });
   } else {
     res.status(500).send('Database not connected');
@@ -88,7 +88,7 @@ router.post('/add-enrollment', function(req, res, next) {
       }
       console.log(`Added enrollment: StdSSN=${StdSSN}, OfferNo=${OfferNo}`);
 
-      StdQuery(req, res, next); // Redirect to refresh the homepage with updated data
+      StdQuery(req, res, next); // Query the Student Query again to Refresh the Page Correctly
     });
   } else {
     res.status(500).send('Database not connected');
@@ -109,13 +109,35 @@ router.post('/edit-grade', function(req, res, next){
       }
       console.log(`Updated grade: OfferNo=${OfferNo}, StdSSN=${StdSSN}, EnrGrade=${EnrGrade}`);
 
-      ViewQuery(req, res, next); // Redirect to refresh the View Course with updated data
+      ViewQuery(req, res, next); // Query the View Query again to Refresh the Page Correctly
     });
   } else {
     res.status(500).send('Database not connected');
   }
 });
 
+/* Registrar Edit Course Logic */
+router.post('/registrar-edit', function(req, res, next) {
+  const { OfferNo, CourseNo, FacSSN, OffLocation, OffTime, OffDays } = req.body;
+
+  if (req.app.locals.db) {
+    const updateQuery = "UPDATE Offering SET FacSSN = ?, OffLocation = ?, OffTime = ?, OffDays = ? WHERE OfferNo = ? AND CourseNo = ?"
+
+    req.app.locals.db.run(updateQuery, [FacSSN, OffLocation, OffTime, OffDays, OfferNo, CourseNo], function(err) {
+      if (err) {
+        console.error(err.message);
+        res.status(500).send('Error updating grade');
+        return;
+      }
+
+      console.log(`Updated Offering: OfferNo=${OfferNo}, CourseNo=${CourseNo}, FacSSN=${FacSSN}, OffLocation=${OffLocation}, OffTime=${OffTime}, OffDays=${OffDays}`);
+      
+      RegQuery(req, res, next); // Query the Registrar Query again to Refresh the Page Correctly
+    });  
+  } else {
+    res.status(500).send('Database not connected');
+  }
+});
 
 /* Top Level Query */
 function topLevel(req, res, next) {
@@ -152,7 +174,8 @@ function topLevel(req, res, next) {
       }
       req.app.locals.courses = rows;
 
-      RegQuery(req, res, next);
+      ProfQuery(req, res, next);
+      RegQuery(req, res, next); // Get Courses for Upcoming Term
     });
   }
 }
@@ -208,7 +231,7 @@ function StdQuery(req, res, next) {
 /* Registrar Homepage Query */
 function RegQuery(req, res, next) {
   if (req.app.locals.formdata) {
-    let paramQuery = `SELECT OfferNo, CourseNo, FacFirstName || ' ' || FacLastName as ProfessorName, OffLocation, OffTime, OffDays `
+    let paramQuery = `SELECT OfferNo, CourseNo, o.FacSSN, FacFirstName || ' ' || FacLastName as ProfessorName, OffLocation, OffTime, OffDays `
                     + `FROM Offering o `
                     + `LEFT JOIN Faculty f ON o.FacSSN = f.FacSSN `
                     + `WHERE OffTerm = "WINTER"`
@@ -224,6 +247,17 @@ function RegQuery(req, res, next) {
   else {
     showHomepage(req, res, next);
   }
+}
+
+function ProfQuery(req, res, next) {
+  req.app.locals.query = "SELECT FacSSN, FacFirstName || ' ' || FacLastName as ProfessorName FROM Faculty";
+
+  req.app.locals.db.all(req.app.locals.query, [], (err, rows) => {
+    if (err) {
+      throw err;
+    }
+    req.app.locals.professors = rows;
+  });
 }
 
 /* Student Add Query */
@@ -276,11 +310,12 @@ function ViewQuery(req, res, next) {
 
 function clearReqAppLocals(req) {
   req.app.locals.query = '';
-  req.app.locals.rows = [];
   req.app.locals.userID = '';
   req.app.locals.paramQuery = '';
   req.app.locals.OfferNo = '';
   req.app.locals.courses = [];
+  req.app.locals.rows = [];
+  req.app.locals.professors = [];
   req.app.locals.formdata = {};
 }
 
@@ -299,6 +334,7 @@ function showHomepage(req, res, next) {
   res.render('homepage', { title: 'Homepage',
                           rows: req.app.locals.rows,
                           courses: req.app.locals.courses,
+                          professors: req.app.locals.professors,
                           userID: req.app.locals.userID,
                           role: req.app.locals.formdata.role,
   })
