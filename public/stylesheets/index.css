@@ -104,3 +104,29 @@ tr:hover {
 #noResult {
   font-weight: bold;
 }
+
+.edit-button{
+  padding: 10px 20px;
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px; /* Optional padding for spacing */
+}
+
+#regDelete {
+  background-color: red; /* Optional styling */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+#regSave {
+  background-color: green; /* Optional styling */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+}
