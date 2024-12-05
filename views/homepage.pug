@@ -8,20 +8,30 @@ html
         else
             h3#resultHeader #{role}
         
-        if role ==='faculty' || role ==='registrar'
+        if role ==='faculty'
             if courses.length === 0
                 p#noResult No Result for: #{userID} || Faculty ID not in Database
             else if courses.length > 0
-                table(class='resultTable')
+                table#resultTable
                     thead
                         tr
                             each key in Object.keys(courses[0])
-                                th= key
+                                if key !== 'OfferNo'
+                                    th= key
+                                
+                            th View Course
                     tbody 
                         each course in courses
                             tr
                                 each val in Object.values(course)
-                                    td= val
+                                    if val !== course.OfferNo
+                                        td= val
+                                
+                                td
+                                    form#viewCourse(method="POST", action="/view-course")
+                                        input(type="hidden", name="FacSSN", value=userID)
+                                        input(type="hidden", name="OfferNo", value=course.OfferNo)
+                                        button(type="submit") View
         else if role === 'student'
             if courses.length === 0
                 p#noResult No Result for: #{userID} || Student ID not in Database
@@ -42,9 +52,21 @@ html
                                         td= val
 
                                 td
-                                    form#delete-form(method="POST", action="/delete-enrollment")
+                                    form#deleteForm(method="POST", action="/delete-enrollment")
                                         input(type="hidden", name="StdSSN", value=userID)
                                         input(type="hidden", name="OfferNo", value=course.OfferNo)
                                         button(type="submit") Delete
-            form#add-form(method="POST", action="/student-add")
+            form#addForm(method="POST", action="/student-add")
                 button(type="submit") Add Course
+        else
+            table#resultTable
+                thead
+                    tr
+                        each key in Object.keys(courses[0])
+                            th= key
+                    tbody 
+                        each course in courses
+                            tr
+                                each val in Object.values(course)
+                                    td= val
+

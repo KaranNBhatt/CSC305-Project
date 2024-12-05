@@ -1,0 +1,39 @@
+html
+    head
+        title=title
+        link(rel='stylesheet', href='/stylesheets/index.css')  
+    
+    body
+        h3#resultHeader View Course | OfferNo: #{offerNo}
+        .classcontainer
+            table#classTable
+                thead
+                    tr
+                        each key in Object.keys(courses[0])
+                            if key !== "OfferNo"
+                                th= key
+                                
+                        th Edit Grade
+                tbody 
+                    each course in courses
+                        tr
+                            each val in Object.values(course)
+                                if val !== course.OfferNo
+                                    td= val
+
+                            td
+                                .edit-container
+                                    button.edit-button(type="button") Edit
+                                    form.edit-form(method="POST", action="/edit-grade", style="display: none")
+                                        input(type="hidden", name="OfferNo", value=OfferNo)
+                                        input(type="hidden", name="StdSSN", value=course.StdSSN)
+                                        input(type="number", name="EnrGrade", value=course.EnrGrade, step=".01", min="0", max="5" required)
+                                        button(type="submit") Save
+    script.
+        document.querySelectorAll('.edit-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const editContainer = this.closest('.edit-container');
+                this.style.display = 'none'; // Hide the Edit button
+                editContainer.querySelector('.edit-form').style.display = 'block'; // Show the Save form
+            });
+        });
