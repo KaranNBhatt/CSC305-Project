@@ -54,7 +54,17 @@ button:hover {
 
 table {
   width: 100%; /* Make table fill the container */
+  max-width: 100%;
   border-collapse: collapse; /* Remove gaps between cells */
+  table-layout: auto;
+}
+
+.classcontainer {
+  max-height: 500px; /* Set a maximum height (adjust as needed) */
+  overflow-y: auto;  /* Enable vertical scrolling */
+  overflow-x: auto;  /* Keep horizontal scrolling if needed */
+  width: 100%;       /* Ensure the container spans the page width */
+  border: 1px solid #ddd; /* Optional: Add a border to the container */
 }
 
 th, td {
@@ -84,7 +94,7 @@ tr:hover {
     margin: 0; /* Remove default margins */
 }
 
-#add-form {
+#addForm {
   position: absolute; /* Position it relative to the nearest positioned ancestor */
   bottom: 0; /* Align to the bottom */
   left: 0; /* Align to the left */
