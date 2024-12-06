@@ -1,0 +1,54 @@
+html
+    head
+        title=title
+        link(rel='stylesheet', href='/stylesheets/index.css')  
+    
+    body
+        h3#resultHeader Add Course Offering
+        .class-container
+            table#classTable
+                thead
+                    tr
+                        each key in Object.keys(courses[0])
+                                th= key
+                                
+                        th Add Offering
+                tbody 
+                    each course in courses
+                        tr
+                            each val in Object.values(course)
+                                    td= val
+
+                            td
+                                .edit-container
+                                    button.edit-button(type="button") Add
+                                    form.edit-form(method="POST", action="/registrar-add-form", style="display: none")
+                                        input(type="hidden", name="CourseNo", value=course.CourseNo)
+                                        input(type="hidden", name="OffTerm", value="WINTER")
+                                        input(type="hidden", name="OffYear", value=2025)
+                                        input(type="hidden", name="FacSSN", value="")
+                                        input(type="number", name="OfferNo", placeholder="Add OfferNo", required)
+                                        input(type="text", name="OffLocation", placeholder="Add Location", required)
+                                        input(type="time", name="OffTime", min="08:00", max="17:00", required)
+                                        input(type="text", name="OffDays", placeholder="Add Days", required)
+                                        button(type="submit") Add Offering
+
+    script.                       
+        document.querySelectorAll('.edit-button').forEach(button => {
+            button.addEventListener('click', function () {
+                // Close any open edit forms
+                document.querySelectorAll('.edit-container').forEach(container => {
+                    const editForm = container.querySelector('.edit-form');
+                    const editButton = container.querySelector('.edit-button');
+                    if (editForm && editForm.style.display === 'block') {
+                        editForm.style.display = 'none'; // Hide the edit form
+                        editButton.style.display = 'block'; // Show the Edit button
+                    }
+                });
+
+                // Open the clicked row's edit form
+                const editContainer = this.closest('.edit-container');
+                this.style.display = 'none'; // Hide the Edit button
+                editContainer.querySelector('.edit-form').style.display = 'block'; // Show the Save form
+            });
+        });

@@ -34,6 +34,16 @@ router.post('/student-add', function(req, res, next) {
   else {
     showHomepage(req, res, next);
   }
+});
+
+/* Display Registrar Add Page */
+router.post('/registrar-add', function(req, res, next) {
+  if (req.app.locals.db) {
+    RegAddQuery(req, res, next); // Get Courses
+  }
+  else {
+    showHomepage(req, res, next);
+  }
 })
 
 /* Displays Students in Course */
@@ -44,7 +54,7 @@ router.post('/view-course', function(req, res, next) {
   else {
     showHomepage(req, res, next);
   }
-})
+});
 
 /* Student Delete Course Logic */
 router.post('/delete-enrollment', function(req, res, next) {
@@ -116,6 +126,8 @@ router.post('/edit-grade', function(req, res, next){
   }
 });
 
+
+
 /* Registrar Edit Course Logic */
 router.post('/registrar-edit', function(req, res, next) {
   const { OfferNo, CourseNo, FacSSN, OffLocation, OffTime, OffDays } = req.body;
@@ -131,6 +143,53 @@ router.post('/registrar-edit', function(req, res, next) {
       }
 
       console.log(`Updated Offering: OfferNo=${OfferNo}, CourseNo=${CourseNo}, FacSSN=${FacSSN}, OffLocation=${OffLocation}, OffTime=${OffTime}, OffDays=${OffDays}`);
+      
+      RegQuery(req, res, next); // Query the Registrar Query again to Refresh the Page Correctly
+    });  
+  } else {
+    res.status(500).send('Database not connected');
+  }
+});
+
+router.post('/delete-offering', function(req, res, next) {
+  const { OfferNo } = req.body;
+
+  if (req.app.locals.db) {
+    const deleteQuery = "DELETE FROM Offering WHERE OfferNo = ?";
+
+    req.app.locals.db.run(deleteQuery, [OfferNo], function(err) {
+      if (err) {
+        console.error(err.message);
+        res.status(500).send('Error deleting enrollment');
+        return;
+      }
+      console.log(`Deleted Offering: OfferNo=${OfferNo}`);
+
+      RegQuery(req, res, next); // Query the Student Query again to Refresh the Page Correctly
+    });
+  } else {
+    res.status(500).send('Database not connected');
+  }
+});
+
+router.post('/registrar-add-form', function(req, res, next) {
+  const { OfferNo, CourseNo, OffTerm, OffYear, FacSSN, OffLocation, OffTime, OffDays} = req.body;
+
+  if (req.app.locals.db) {
+    const insertQuery = "INSERT INTO Offering (OfferNo, CourseNo, OffTerm, OffYear, FacSSN, OffLocation, OffTime, OffDays) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+
+    req.app.locals.db.run(insertQuery, [OfferNo, CourseNo, OffTerm, OffYear, FacSSN, OffLocation, OffTime, OffDays], function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          console.error('Duplicate offer attempt.');
+          res.status(400).send('Already Offering this course.');
+        } else {
+          console.error(err.message);
+          res.status(500).send('Error adding offer');
+        }
+      }
+
+      console.log(`Inserted into Offering: OfferNo=${OfferNo}, CourseNo=${CourseNo}, OffLocation=${OffLocation}, OffTime=${OffTime}, OffDays=${OffDays}`);
       
       RegQuery(req, res, next); // Query the Registrar Query again to Refresh the Page Correctly
     });  
@@ -234,13 +293,12 @@ function RegQuery(req, res, next) {
     let paramQuery = `SELECT OfferNo, CourseNo, o.FacSSN, FacFirstName || ' ' || FacLastName as ProfessorName, OffLocation, OffTime, OffDays `
                     + `FROM Offering o `
                     + `LEFT JOIN Faculty f ON o.FacSSN = f.FacSSN `
-                    + `WHERE OffTerm = "WINTER"`
+                    + `WHERE OffTerm = "WINTER" AND OffYear = 2025`
     req.app.locals.db.all(paramQuery, [], (err, rows) => {
       if (err) {
         throw err;
       }
       req.app.locals.courses = rows;
-      
       showHomepage(req, res, next);
     });
   }
@@ -266,7 +324,7 @@ function AddQuery(req, res, next) {
     let paramQuery = `SELECT OfferNo, CourseNo, FacFirstName || ' ' || FacLastName as ProfessorName, OffLocation, OffTime, OffDays ` 
                     + `FROM Offering o ` 
                     + `LEFT JOIN Faculty f ON o.FacSSN = f.FacSSN ` 
-                    + `WHERE OffTerm = "WINTER"`
+                    + `WHERE OffTerm = "WINTER" AND OffYear = 2025`
     req.app.locals.db.all(paramQuery, [], (err, rows) => {
       if (err) {
         throw err;
@@ -304,6 +362,23 @@ function ViewQuery(req, res, next) {
     });
   }
   else {
+    showHomepage(req, res, next);
+  }
+}
+
+function RegAddQuery(req, res, next) {
+  if (req.app.locals.formdata) {
+    req.app.locals.query = "SELECT * FROM Course"
+
+    req.app.locals.db.all(req.app.locals.query, [], (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      req.app.locals.courses = rows;
+
+      showRegistrarAdd(req, res, next);
+    });
+  } else {
     showHomepage(req, res, next);
   }
 }
@@ -357,6 +432,13 @@ function showViewCourse(req, res, next) {
                               courses: req.app.locals.courses,
                               userID: req.app.locals.userID,
                               offerNo: req.app.locals.OfferNo,
+  })
+}
+
+function showRegistrarAdd(req, res, next) {
+  res.render('registrar-add', { title: 'Registrar Add',
+                              rows: req.app.locals.rows,
+                              courses: req.app.locals.courses,
   })
 }
  

@@ -67,31 +67,36 @@ html
                                 th= key
 
                         th Edit Offer
+                        th Remove Offer
                     tbody 
                         each course in courses
                             tr
                                 each val in Object.values(course)
                                     if val !== course.FacSSN
-                                        td= val
-                                
+                                        if val
+                                            td= val 
+                                        else
+                                            td= '-'
                                 td
-                                        .edit-container
+                                    .edit-container
                                             button.edit-button(type="button") Edit
                                             form.edit-form(method="POST", action="/registrar-edit", style="display: none")
                                                 input(type="hidden", name="OfferNo", value=course.OfferNo)
                                                 input(type="hidden", name="CourseNo", value=course.CourseNo)
-                                                input(type="text", name="OffLocation", value=course.OffLocation, required)
+                                                input(type="text", name="OffLocation", value=course.OffLocation, placeholder="Offer Location", required)
                                                 input(type="time", name="OffTime", value=course.OffTime, min="08:00", max="17:00", required)
-                                                input(type="text", name="OffDays", value=course.OffDays, required)
+                                                input(type="text", name="OffDays", value=course.OffDays, placeholder="Days Offered", required)
                                                 select(name="FacSSN")
                                                     option(value="" selected!=course.FacSSN)
                                                     each professor in professors
                                                         option(value=professor.FacSSN selected=(professor.FacSSN === course.FacSSN))= professor.ProfessorName
-                                                .button-container
-                                                    button#regDelete(type="submit") Delete     
-                                                    button#regSave(type="submit") Save
-        form#addForm(method="POST", action="/registrar-add")
-            button(type="submit") Add Offering
+                                                button#regSave(type="submit") Save
+                                td
+                                    form#deleteForm(method="POST", action="/delete-offering")
+                                        input(type="hidden", name="OfferNo", value=course.OfferNo)
+                                        button#regDelete(type="submit") Delete
+            form#addForm(method="POST", action="/registrar-add")
+                button(type="submit") Add Offering
     
     script.                       
         document.querySelectorAll('.edit-button').forEach(button => {
